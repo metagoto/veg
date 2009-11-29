@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <functional>
 #include <list>
+#include <boost/noncopyable.hpp>
 
 namespace runpac { namespace veg {
 
@@ -22,7 +23,7 @@ struct ast
     typedef typename String::const_iterator iterator_type;
 
 
-    struct node_base
+    struct node_base : boost::noncopyable
     {
 
         node_base()
@@ -33,6 +34,14 @@ struct ast
             : parent(0)
             , start(s)
         {
+        }
+
+
+        virtual ~node_base()
+        {
+            typename std::list<node_base*>::iterator s = children.begin();
+            typename std::list<node_base*>::iterator e = children.end();
+            std::for_each(s, e, std::bind1st(std::mem_fun(&node_base::remove_child), this));
         }
 
 
@@ -50,13 +59,6 @@ struct ast
                 delete *it;
                 children.erase(it);
             }
-        }
-
-        virtual ~node_base()
-        {
-            typename std::list<node_base*>::iterator s = children.begin();
-            typename std::list<node_base*>::iterator e = children.end();
-            std::for_each(s, e, std::bind1st(std::mem_fun(&node_base::remove_child), this));
         }
 
 
@@ -86,12 +88,9 @@ struct ast
             return 0;
         }
 
-
+        node_base* parent;
         iterator_type start;
         iterator_type end;
-
-        node_base* parent;
-
         std::list<node_base*> children;
 
     };

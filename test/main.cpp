@@ -1,7 +1,4 @@
 
-#include <algorithm>
-#include <functional>
-
 #include "../include/veg/operators.hpp"
 #include "../include/veg/chars.hpp"
 #include "../include/veg/context.hpp"
@@ -165,6 +162,7 @@ static jstest::xjson_type describe(ast<std::string>::node_base* n)
         default :
             ;
     }
+    return jstest::xjson_object();
 }
 
 
@@ -194,7 +192,7 @@ struct json_parser : public ast<std::string>
 
 
 
-// g++ -std=c++0x -o prog test/main.cpp -I/Users/runpac/dev/boost_44/include/
+//g++ -std=c++0x -Wall -o prog test/main.cpp -I/Users/runpac/dev/boost_44/include
 int main()
 {
 
