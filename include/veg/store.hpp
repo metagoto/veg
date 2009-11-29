@@ -1,22 +1,20 @@
 #pragma once
 
-#include "guard.hpp"
-
 namespace runpac { namespace veg {
 
 
 template<typename T>
-struct peek
+struct store
 {
     template<typename Context>
     static bool match(Context& c)
     {
-        //auto i = c.pos();
-        guard<Context> g(c);
+        c.tree().template create_node<T>(c.pos());
         if (T::match(c)) {
-            //c.pos(i);
+            c.tree().finalize_node(c.pos());
             return true;
         }
+        c.tree().forget_node();
         return false;
     }
 };

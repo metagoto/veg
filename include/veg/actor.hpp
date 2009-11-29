@@ -1,26 +1,22 @@
 #pragma once
 
-#include "guard.hpp"
-
 namespace runpac { namespace veg {
 
 
-template<typename T>
-struct peek
+template<typename T, typename A>
+struct actor
 {
     template<typename Context>
     static bool match(Context& c)
     {
-        //auto i = c.pos();
-        guard<Context> g(c);
+        auto s = c.pos();
         if (T::match(c)) {
-            //c.pos(i);
+            A()(s, c.pos());
             return true;
         }
         return false;
     }
 };
-
 
 
 } } //ns

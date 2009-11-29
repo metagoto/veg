@@ -1,5 +1,8 @@
 #pragma once
 
+#include "guard.hpp"
+
+
 namespace runpac { namespace veg {
 
 
@@ -9,14 +12,17 @@ struct repeat
     template<typename Context>
     static bool match(Context& c)
     {
-        auto i = c.pos();
+        //auto i = c.pos();
+        guard<Context> g(c);
         for (unsigned int n = 0; n < N; ++n) {
             if (!T::match(c)) {
-                c.pos(i);
+                //c.pos(i);
                 return false;
+                //return g.dismiss();
             }
         }
-        return true;
+        //return true;
+        return g.dismiss();
     }
 };
 

@@ -1,11 +1,19 @@
 
+#include <algorithm>
+#include <functional>
 
 #include "../include/veg/operators.hpp"
 #include "../include/veg/chars.hpp"
 #include "../include/veg/context.hpp"
+#include "../include/veg/actor.hpp"
+
+#include "../include/veg/store.hpp"
+#include "../include/veg/ast.hpp"
+
 
 #include "test.hpp"
 #include "json.hpp"
+#include "json2.hpp"
 
 
 using namespace runpac::veg;
@@ -46,9 +54,147 @@ typedef range<'A','Z', '0','9'> t15;
 typedef set<'v', 'e', 'g', '#'> t16;
 
 
+struct echo_act
+{
+    typedef std::string::const_iterator it_type;
+    void operator()(it_type&& s, it_type&& e)
+    {
+        std::cout << std::string(s, e) << std::endl;
+    }
+};
+
+typedef actor<ch<'s','a','l','u','t'>, echo_act> t17;
+
+typedef seq<t17, ch<'x'>> t18;
 
 
 
+namespace runpac { namespace veg {
+
+template<>
+struct type_to_int<jstest::json_string>
+{  static const int num = 1; };
+
+template<>
+struct type_to_int<jstest::json_number>
+{  static const int num = 2; };
+
+template<>
+struct type_to_int<jstest::json_object>
+{  static const int num = 3; };
+
+template<>
+struct type_to_int<jstest::json_array>
+{  static const int num = 4; };
+
+template<>
+struct type_to_int<jstest::json_true>
+{  static const int num = 5; };
+\
+template<>
+struct type_to_int<jstest::json_false>
+{  static const int num = 6; };
+
+template<>
+struct type_to_int<jstest::json_null>
+{  static const int num = 7; };
+
+} } // ns
+
+
+struct json_type_converter_visitor : public boost::static_visitor<>
+{
+    void operator()(const jstest::xjson_object& val) const
+    {
+        for (jstest::xjson_object::const_iterator i(val.begin()), e(val.end()); i != e; ++i) {
+            std::cout << i->first << std::endl;
+            boost::apply_visitor( json_type_converter_visitor(), i->second );
+        }
+    }
+
+    void operator()(const jstest::xjson_array& val) const
+    {
+        for (jstest::xjson_array::const_iterator i(val.begin()), e(val.end()); i != e; ++i) {
+            boost::apply_visitor( json_type_converter_visitor(), *i );
+        }
+    }
+
+    template<typename T>
+    void operator()(const T& val) const
+    {
+        std::cout << val << std::endl;
+    }
+};
+
+
+
+static jstest::xjson_type describe(ast<std::string>::node_base* n)
+{
+
+    switch (n->type())
+    {
+
+        case 1 : // string
+            return n->str();
+        case 2 : // num, true, false, null
+        case 5 :
+        case 6 :
+        case 7 :
+            return n->str();
+        case 3 :  { // obj
+            jstest::xjson_object obj;
+            auto i = n->children.begin();
+            auto e = n->children.end();
+            for ( ; i != e; ++i) {
+                std::string key = (*i)->str();
+                ++i;
+                obj[key] = describe(*i);
+            }
+            return obj;
+        }
+        case 4 : { // array
+            jstest::xjson_array arr;
+            auto i = n->children.begin();
+            auto e = n->children.end();
+            for ( ; i != e; ++i) {
+                arr.push_back(describe(*i));
+            }
+            return arr;
+        }
+        case 0 : // should not reach
+        default :
+            ;
+    }
+}
+
+
+struct json_parser : public ast<std::string>
+{
+
+    json_parser(const std::string& s)
+    {
+
+        tree_context<std::string::const_iterator, json_parser> c(s.begin(), s.end(), *this);
+
+        bool b = jstest::json_value::match(c);
+
+        if (b) {
+            traverse();
+            jstest::xjson_type json = describe();
+            boost::apply_visitor( json_type_converter_visitor(), json );
+        }
+    }
+
+    jstest::xjson_type describe()
+    {
+        return ::describe(*(root->children.begin()));
+    }
+
+};
+
+
+
+// g++ -std=c++0x -o prog test/main.cpp -I/Users/runpac/dev/boost_44/include/
 int main()
 {
 
@@ -113,6 +259,17 @@ int main()
     test<json_object>("{\"key\": \"val\" , \"key2\" : true }");
     test<json_array>("[1, 2 ]");
     test<json_array>("[1,2, \"str\" , { \"key\" :  \"val\" , \"key2\": true }]");
+
+    test<t17>("salut");
+    test<t17>("saluz", false);
+
+    test<t18>("salutx");
+    test<t18>("salutZ", false);
+
+    json_parser p0("42");
+    json_parser p1("\"key\"");
+    json_parser p2("[\"blah\", [], true]");
+    json_parser p3("[1,2, \"str\" , { \"key\" :  \"val\", \"key2\": [true, null] }, false,[]]");
 
 
     return 0;

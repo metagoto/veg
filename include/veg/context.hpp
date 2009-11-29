@@ -1,6 +1,7 @@
 #pragma once
 
 //tmp
+#include <iostream>
 
 namespace runpac { namespace veg {
 
@@ -56,6 +57,24 @@ struct context
     iterator_type end;
     iterator_type it;
 
+};
+
+
+template<typename Iterator, typename Tree>
+struct tree_context : public context<Iterator>
+{
+    tree_context(Iterator beg, Iterator end, Tree& tree)
+        : context<Iterator>(beg, end)
+        , outer_tree(tree)
+    {
+    }
+
+    Tree& tree()
+    {
+        return outer_tree;
+    }
+
+    Tree& outer_tree;
 };
 
 

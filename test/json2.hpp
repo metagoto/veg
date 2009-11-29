@@ -1,10 +1,32 @@
 #pragma once
 
+#include <vector>
+#include <ctime>
+#include <boost/variant.hpp>
+#include <boost/unordered_map.hpp>
+#include <boost/variant/static_visitor.hpp>
+
 #include "../include/veg/operators.hpp"
 #include "../include/veg/chars.hpp"
 
 
-namespace runpac { namespace veg {
+namespace runpac { namespace veg { namespace jstest {
+
+
+
+
+typedef boost::make_recursive_variant
+<
+     int, double, bool, const char*, std::string, std::time_t // time_t ?
+    ,boost::unordered_map<std::string, boost::recursive_variant_> // object
+    ,std::vector<boost::recursive_variant_> // array
+
+>::type xjson_type;
+
+typedef boost::unordered_map<std::string, xjson_type> xjson_object;
+typedef std::vector<xjson_type> xjson_array;
+
+
 
 
 typedef set<' ','\n','\r','\t'> space;
@@ -60,20 +82,20 @@ struct json_array;
 struct json_value : public
 tok
 < alter
-  < json_string
-  , json_number
-  , json_object
-  , json_array
-  , json_true
-  , json_false
-  , json_null
+  < store<json_string>
+  , store<json_number>
+  , store<json_object>
+  , store<json_array>
+  , store<json_true>
+  , store<json_false>
+  , store<json_null>
   >
 > {};
 
 
 struct json_kv_pair : public
 seq
-< tok<json_string>
+< tok<store<json_string> >
 , ch_tok<':'>
 , json_value
 > {};
@@ -93,7 +115,10 @@ seq
     >
   >
 , ch<'}'>
-> {};
+> {
+  //////////static int type_id = 4;
+
+};
 
 
 struct json_array : public
@@ -113,5 +138,5 @@ seq
 , ch<']'>
 > {};
 
-} } // ns
+} } } // ns
 

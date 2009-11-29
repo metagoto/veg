@@ -1,5 +1,6 @@
 #pragma once
 
+#include "guard.hpp"
 
 namespace runpac { namespace veg {
 
@@ -11,14 +12,15 @@ struct until_past
     template<typename Context>
     static bool match(Context& c)
     {
-        auto i = c.pos();
+        //auto i = c.pos();
+        guard<Context> g(c);
         while (true) {
             if (T::match(c)) {
-                return true;
+                return g.dismiss();
             }
             ++c;
             if (c.eoi()) {
-                c.pos(i);
+                //c.pos(i);
                 return false;
             }
         }
